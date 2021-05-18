@@ -19,7 +19,7 @@ public class RegisterService {
 						request.getSurname(),
 						request.getEmail(),
 						request.getPassword(), 
-						false
+						request.getProfilePicUrl()
 						)
 				);
 	}

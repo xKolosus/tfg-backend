@@ -5,19 +5,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.app.models.User;
-import com.app.repository.UserRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.app.dto.ArticleDTO;
+import com.app.dto.CategoryDTO;
 import com.app.dto.PostDTO;
 import com.app.exceptions.NotFoundException;
 import com.app.models.Article;
+import com.app.models.Category;
 import com.app.models.Post;
+import com.app.models.User;
 import com.app.repository.ArticleRepository;
+import com.app.repository.CategoryRepository;
 import com.app.repository.PostRepository;
+import com.app.repository.UserRepository;
 
 @Service
 public class ArticleService {
@@ -30,6 +33,9 @@ public class ArticleService {
 
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private CategoryRepository categoryRepository;
 	
 	@Autowired
 	private ModelMapper modelMapper;
@@ -54,6 +60,7 @@ public class ArticleService {
 			articleDTO.setArticleImageUrl("https://i.ibb.co/VqvJz9M/default.jpg");
 		}
 		Article article = modelMapper.map(articleDTO, Article.class);
+		article.setCreatedAt(LocalDateTime.now());
 		articleRepository.save(article);
 		
 		return modelMapper.map(article, ArticleDTO.class);
@@ -81,6 +88,15 @@ public class ArticleService {
 	}
 	
 	public void deleteArticle(final Long id) {
+		Optional<Article> article = articleRepository.findById(id);
+		if(!article.isPresent()) {
+			throw new NotFoundException();
+		}
+		List<Post> posts = article.get().getPosts();
+		for(Post post : posts) {
+			postRepository.delete(post);
+		}
+		
 		articleRepository.deleteById(id);
 	}
 	
@@ -118,13 +134,13 @@ public class ArticleService {
 		}
 	}
 	
-	public List<ArticleDTO> getAllArticlesByCategoryId(final Long categoryId){
+	public List<ArticleDTO> getAllArticlesByCategoryId(final CategoryDTO category){
 		List<ArticleDTO> articles = new ArrayList<>();
-		articleRepository.findAll().stream().forEach((article) -> {
-			if(article.getCategory().getCategoryId() == categoryId) {
-				articles.add(modelMapper.map(article, ArticleDTO.class));
-			}	
-		});
+		Optional<Category> categ = categoryRepository.findById(category.getCategoryId());
+		articleRepository.findByCategory(categ.get()).stream()
+			.forEach(art -> {
+				articles.add(modelMapper.map(art, ArticleDTO.class));
+			});;
 		return articles;
 	}
 

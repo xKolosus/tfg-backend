@@ -53,10 +53,6 @@ public class PostService {
 		return postDTO;
 	}
 	
-	public void deletePost(final Long id) {
-		postRepository.deleteById(id);
-	}
-
 	public void deleteByUserId(final Long userId){
 		Optional<User> user = userRepository.findById(userId);
 		if(!user.isPresent()){
@@ -66,5 +62,51 @@ public class PostService {
 		for(Post post : posts){
 			postRepository.delete(post);
 		}
+	}
+	
+	public PostDTO addLikeToPost(final Long id) {
+		Optional<Post> post = postRepository.findById(id);
+		if(!post.isPresent()) {
+			throw new NotFoundException("Post not found!");
+		}
+		
+		Post postGet = post.get();
+		postGet.setPostLikes(postGet.getPostLikes() + 1);
+		
+		postRepository.save(postGet);
+		return modelMapper.map(postGet, PostDTO.class);
+	}
+	
+	public PostDTO addDislikeToPost(final Long id) {
+		Optional<Post> post = postRepository.findById(id);
+		if(!post.isPresent()) {
+			throw new NotFoundException("Post not found!");
+		}
+		
+		Post postGet = post.get();
+		postGet.setPostDislikes(postGet.getPostDislikes() + 1);
+		
+		postRepository.save(postGet);
+		return modelMapper.map(postGet, PostDTO.class);
+	}
+	
+	public void deletePost(final Long postId) {
+		Optional<Post> post = postRepository.findById(postId);
+		if(!post.isPresent()) {
+			throw new NotFoundException("Post doesn't exist!");
+		}
+		
+		Post postGet = post.get();
+		postRepository.delete(postGet);
+	}
+	
+	public Integer countByUserId(final Long userId) {
+		Optional<User> user = userRepository.findById(userId);
+		if(!user.isPresent()){
+			throw new NotFoundException("User not found!");
+		}
+		return postRepository.findPostByUser(user.get()).size();
+		
+		
 	}
 }

@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.app.repository.ArticleRepository;
-import com.app.repository.PostRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,11 +16,13 @@ import org.springframework.stereotype.Service;
 
 import com.app.dto.UserDTO;
 import com.app.dto.UserLoginDTO;
+import com.app.dto.UserNoPasswdDTO;
 import com.app.dto.UserRegistrationDTO;
 import com.app.dto.UserWithTokenDTO;
 import com.app.exceptions.NotFoundException;
 import com.app.models.User;
 import com.app.repository.UserRepository;
+import com.sun.xml.txw2.IllegalAnnotationException;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -61,12 +61,14 @@ public class UserService {
 		if(exists) {
 			throw new IllegalStateException("email already taken");
 		}
-		
+		if(registration.getProfilePicUrl() == null) {
+			registration.setProfilePicUrl("https://i.ibb.co/xjczRDM/user.png");
+		}
 		String encodedPassword = bCryptPasswordEncoder
 				.encode(registration.getPassword());
-		
 		registration.setPassword(encodedPassword);
 		User userToSave = modelMapper.map(registration, User.class);
+		userToSave.setIsAdmin(Boolean.FALSE);
 		userRepository.save(userToSave);
 	}
 	
@@ -79,12 +81,12 @@ public class UserService {
 		User userLogged = modelMapper.map(userToLog.get(), User.class);
 		boolean isValidPassword = BCrypt.checkpw(login.getPassword(), userLogged.getPassword());
 		if(!isValidPassword) {
-			throw new NotFoundException("Password is not correct!");
+			throw new IllegalStateException("Password is not correct!");
 		}
 		UserDTO userDTO = modelMapper.map(userLogged, UserDTO.class);
 		String tokenGenerated = getJWTToken(userDTO.getEmail());
 		
-		UserWithTokenDTO userToken = new UserWithTokenDTO(userDTO.getEmail(), tokenGenerated);
+		UserWithTokenDTO userToken = new UserWithTokenDTO(userDTO.getUserId(), userDTO.getEmail(), tokenGenerated, userDTO.getProfilePicUrl());
 		return userToken;	
 	}
 	
@@ -97,7 +99,7 @@ public class UserService {
 						.map(GrantedAuthority::getAuthority)
 						.collect(Collectors.toList()))
 				.setIssuedAt(new Date(System.currentTimeMillis()))
-				.setExpiration(new Date(System.currentTimeMillis() + 600000))
+				.setExpiration(new Date(System.currentTimeMillis() + 6000000))
 				.signWith(SignatureAlgorithm.HS512, myJWTSecret.getBytes()).compact();
 		
 		return "Bearer " + token;
@@ -113,5 +115,51 @@ public class UserService {
 		articleService.deleteByUserId(user.getUserId());
 		userRepository.delete(user);
 
+	}
+	
+	public UserNoPasswdDTO getUserByEmail(final String email) {
+		Optional<User> userEmail = userRepository.findByEmail(email);
+		if(!userEmail.isPresent()) {
+			throw new NotFoundException("Email doesn't exist");
+		}
+		
+		User user = userEmail.get();
+		return modelMapper.map(user, UserNoPasswdDTO.class);
+	}
+	
+	public UserDTO getUserByID(final Long userId) {
+		Optional<User> userById = userRepository.findById(userId);
+		if(!userById.isPresent()) {
+			throw new NotFoundException();
+		}
+		
+		User user = userById.get();
+		return modelMapper.map(user, UserDTO.class);
+	}
+	
+	public UserNoPasswdDTO updateUser(final Long userId, final UserNoPasswdDTO userDTO) {
+		Optional<User> user = userRepository.findById(userId);
+		if(!user.isPresent()) {
+			throw new NotFoundException("User not found!");
+		}
+		
+		User userGet = user.get();
+		if(userDTO.getName() != null) {
+			userGet.setName(userDTO.getName());
+		}
+		if(userDTO.getSurname() != null) {
+			userGet.setSurname(userDTO.getSurname());
+		}
+		if(userDTO.getEmail() != null) {
+			userGet.setEmail(userDTO.getEmail());
+		}
+		
+		userRepository.save(userGet);
+		return modelMapper.map(userGet, UserNoPasswdDTO.class);
+
+	}
+	
+	public Integer countPostsByUserId(final Long userId) {
+		return postService.countByUserId(userId);
 	}
 }

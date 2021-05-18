@@ -1,13 +1,12 @@
 package com.app.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.dto.ArticleDTO;
+import com.app.dto.CategoryDTO;
 import com.app.dto.PostDTO;
 import com.app.exceptions.NotFoundException;
 import com.app.service.ArticleService;
@@ -32,11 +32,7 @@ public class ArticleController {
 
 	@GetMapping
 	@Produces("application/json")
-	public @ResponseBody List<ArticleDTO> getAllArticles(@QueryParam("categoryId") final Long categoryId){
-		List<ArticleDTO> list = new ArrayList<>();
-		if(categoryId != null) {
-			list = articleService.getAllArticlesByCategoryId(categoryId);
-		}
+	public @ResponseBody List<ArticleDTO> getAllArticles(){
 		return articleService.getAllArticles();
 	}
 	
@@ -65,16 +61,28 @@ public class ArticleController {
 		return article;
 	}
 	
-	@GetMapping("{id}/posts")
+	@GetMapping("/posts/{id}")
 	@Produces("application/json")
 	public @ResponseBody List<PostDTO> getArticlePosts(@PathVariable final Long id){
 		return articleService.getPostsById(id);
 	}
 	
-	@PostMapping("{id}/posts")
+	@PostMapping("/posts/{id}")
 	@Produces("application/json")
 	public @ResponseBody PostDTO addPostToAnArtcile(@RequestBody final PostDTO post, @PathVariable final Long id) {
 		return articleService.addPostToAnArticle(post, id);
+	}
+	
+	@GetMapping("/byCategory/{categoryId}")
+	public @ResponseBody List<ArticleDTO> getArticlesByCategoryId(@PathVariable final Long categoryId){
+		CategoryDTO category = new CategoryDTO();
+		category.setCategoryId(categoryId);
+		return articleService.getAllArticlesByCategoryId(category);
+	}
+	
+	@DeleteMapping("{articleId}")
+	public void deleteArticle(@PathVariable final Long articleId) {
+		articleService.deleteArticle(articleId);
 	}
 }
 

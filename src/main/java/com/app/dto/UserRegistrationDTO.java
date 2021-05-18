@@ -14,5 +14,5 @@ public class UserRegistrationDTO implements Serializable {
 	private String surname;
 	private String email;
 	private String password;
-	private Boolean isAdmin;
+	private String profilePicUrl;
 }

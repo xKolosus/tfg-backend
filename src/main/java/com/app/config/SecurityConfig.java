@@ -11,15 +11,13 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.app.service.UserDetailsServiceImpl;
 
@@ -34,7 +32,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private BCryptPasswordEncoder bCryptPasswordEncoder;
 	
 	private String[] urlGet = {
-		"/posts", "/posts/*","/articles","/articles/*","/categories","/categories/*"	
+		"/posts", "/posts/*","/articles","/articles/*","/categories","/categories/*","/users","/users/*"	
+	};
+	
+	private String[] urlPostLog = {
+			"/login", "/login/*", "/register", "/register/*"
+	};
+	
+	private String[] urlPostAuth = {
+			"/posts", "/posts/*","/articles","/articles/*","/categories","/categories/*","/users","/users/*", "/articles/**", "/articles/posts/*"
+	};
+	
+	private String[] urlPutAuth = {
+		"/articles", "/articles/*"
 	};
 	
 	@Override
@@ -47,14 +57,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     	http.cors().disable();
     	http.csrf().disable()
 		.addFilterAfter(new JWTFilterAuth(), UsernamePasswordAuthenticationFilter.class)
+		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+		.and()
 		.authorizeRequests()
-			.antMatchers(HttpMethod.POST, "/login", "/register").permitAll()
+			.antMatchers(HttpMethod.POST, urlPostLog).permitAll()
 			.antMatchers(HttpMethod.GET, urlGet).permitAll()
-			.antMatchers(HttpMethod.OPTIONS, urlGet).permitAll()
 		.and()
     		.exceptionHandling()
     		.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
-    	http.authorizeRequests().anyRequest().authenticated();
+    	http.authorizeRequests()
+    	.antMatchers(HttpMethod.POST, urlPostAuth).authenticated()
+    	.antMatchers(HttpMethod.PUT, urlPutAuth).authenticated();
      	    
     }
     
