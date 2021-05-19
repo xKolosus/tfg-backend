@@ -47,6 +47,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		"/articles", "/articles/*"
 	};
 	
+	private String[] urlDeleteAuth = {
+		"/articles/*","/posts/*", "/users/*"	
+	};
+	
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception { 
 		auth.userDetailsService(userDetailsServiceImpl).passwordEncoder(bCryptPasswordEncoder);
@@ -67,7 +71,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     		.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
     	http.authorizeRequests()
     	.antMatchers(HttpMethod.POST, urlPostAuth).authenticated()
-    	.antMatchers(HttpMethod.PUT, urlPutAuth).authenticated();
+    	.antMatchers(HttpMethod.PUT, urlPutAuth).authenticated()
+    	.antMatchers(HttpMethod.DELETE, urlDeleteAuth).authenticated();
      	    
     }
     

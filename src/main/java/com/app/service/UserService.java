@@ -22,7 +22,6 @@ import com.app.dto.UserWithTokenDTO;
 import com.app.exceptions.NotFoundException;
 import com.app.models.User;
 import com.app.repository.UserRepository;
-import com.sun.xml.txw2.IllegalAnnotationException;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
